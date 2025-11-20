@@ -1,0 +1,174 @@
+name: iPhone-Friendly CI Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Show folder structure
+        run: ls -R
+
+      - name: Node setup
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies (frontend if found)
+        run: |
+          if [ -f "./frontend/package.json" ]; then
+            cd frontend
+            npm install
+          else
+            echo "No frontend folder found"
+          fi
+
+      - name: Done
+        run: echo "CI name: Prod CI/CD - Amplify Enterprise
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: 18
+  REGION: ${{ secrets.AWS_REGION }}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Run quick checks
+        run: |
+          echo "Files:"
+          ls -R
+          if [ -f backend/package.json ]; then echo "Backend found"; fi
+          if [ -f frontend/nextjs/package.json ]; then echo "Frontend found"; fi
+
+  build-and-push:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: Build & push backend image
+        run: |
+          set -e
+          cd backend || exit 0
+          IMAGE=${{ secrets.ECR_REPO }}:${{ github.sha }}
+          docker build -t $IMAGE -f infra/Dockerfile .
+          docker push $IMAGE
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Deploy to ECS (via Copilot if available)
+        run: |
+          if command -v copilot >/dev/null 2>&1; then
+            copilot svc deploy --name amplify-api --env production || echo "Copilot deploy failed or not configured"
+          else
+            echo "Copilot not installed in runner; ensure ECS service is configured to pull the ECR image or use Terraform/CloudFormation."
+      - name: Trigger Amplify frontend build (if configured)
+        run: |
+          if [ -n "${{ secrets.AMPLIFY_APP_ID }}" ]; then
+            aws amplify start-job --app-id ${{ secrets.AMPlIFY_APP_ID }} --branch-name ${{ secrets.AMPLIFY_BRANCH }} --job-type RELEASE --region ${{ secrets.AWS_REGION }}
+          else
+            echo "AMPLIFY_APP_ID not set; skipping Amplify trigger"
+
+  post:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post summary
+        run: Safe personal-data scrub instructions
+====================================
+
+Goal: remove your personal data from the repo cleanly before transferring or selling the repository.
+
+Recommended workflow (manual + GitHub-assisted):
+
+1) Backup: make a private copy of the repo before scrubbing.
+2) Identify personal data:
+   - any `*.pem`, `*.key`, `*.crt` files
+   - any files or docs with your name, email, phone, postal address, or photos
+   - any env files containing real credentials
+3) Replace personal data with placeholders:
+   - Replace values with `REDACTED_FOR_SALE` or remove sections completely.
+4) Run automated scrub (optional) via the included GitHub Action `scrub_personal_data.yml`.
+5) Verify visually in Codespaces or the GitHub UI.
+6) After verification, transfer repo ownership or publish as the sale package.
+
+Notes:
+- The automated scrub performs conservative search-and-replace; it should be used only after a private backup.
+- Do NOT run the automated scrub until you have backed up your repo.
+          echo "Deployment completed. Backend image: ${{ github.sha }}" working on iPhone!"name: Scrub Personal Data
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to run scrub on'
+        required: true
+        default: 'main'
+
+jobs:
+  scrub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Find and replace common personal data patterns
+        run: |
+          set -e
+          git config user.name "scrub-bot"
+          git config user.email "scrub-bot@example.com"
+          # Replace emails and phone-like strings in markdown, txt and env files
+          find . -type f \( -name '*.md' -o -name '*.txt' -o -name '*.env*' \) -print0 | xargs -0 sed -E -i.bak -e 's/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/REDACTED_EMAIL/g'
+          find . -type f \( -name '*.md' -o -name '*.txt' -o -name '*.env*' \) -print0 | xargs -0 sed -E -i.bak -e 's/\b\+?[0-9][0-9()\- \t]{6,}\b/REDACTED_PHONE/g'
+          find . -name '*.bak' -delete || true
+          git add -A
+          git commit -m "Automated scrub: redact personal info" || echo "No changes to commit"
+          git branch scrubbed-${{ github.sha }}
+          git push origin scrubbed-${{ github.sha }} || echo "Push may require UPLOAD GUIDE (iPhone-friendly)
+
+If you want to add the production workflow without pasting:
+1) Open your GitHub repo in the GitHub app or Safari.
+2) Tap 'Add file' -> 'Create new file'.
+3) Type the path: .github/workflows/production.yml
+4) Tap inside the editor, then paste the content of production.yml (disable autocorrect first):
+   - Settings > General > Keyboard: turn off Auto-Correction & Predictive (turn back on later)
+   - Long-press in editor → Paste → Allow Paste if prompted
+5) Scroll down and tap 'Commit changes'.
+6) Repeat to add `.github/workflows/scrub_personal_data.yml` if you want scrub capability.
+7) Add `SCRUB_PERSONAL_DATA.md` to docs/ for reference.
+
+Alternative (no paste): create a text file in the Files app using the Notes app, save as a file, then use GitHub -> Add file -> Upload files to upload that text file into the appropriate path.
